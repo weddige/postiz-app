@@ -1,4 +1,5 @@
 import {
+  AnalyticsData,
   AuthTokenDetails,
   PostDetails,
   PostResponse,
@@ -250,5 +251,52 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
       process.env.MASTODON_URL || 'https://mastodon.social',
       postDetails
     );
+  }
+
+  async analytics(
+    id: string,
+    accessToken: string,
+    date: number
+  ): Promise<AnalyticsData[]> {
+    const until = dayjs().endOf('day').unix();
+    const since = dayjs().subtract(date, 'day').unix();
+    const url = process.env.MASTODON_URL || 'https://mastodon.social';
+
+    const account = await (
+      await this.fetch(`${url}/api/v1/accounts/verify_credentials`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        }
+      })
+    ).json();
+
+    const analytics = [];
+
+    analytics.push({
+      label: 'Followers',
+      percentageChange: 0,
+      data: [{ total: String(account['followers_count']), date: until }],
+    });
+
+    analytics.push({
+      label: 'Following',
+      percentageChange: 0,
+      data: [{ total: String(account['following_count']), date: until }],
+    });
+
+    analytics.push({
+      label: 'Statuses',
+      percentageChange: 0,
+      data: [{ total: String(account['statuses_count']), date: until }],
+    });
+
+    analytics.push({
+      label: 'Follow Requests',
+      percentageChange: 0,
+      data: [{ total: String(account['follow_requests_count']), date: until }],
+    });
+
+    return analytics;
   }
 }
